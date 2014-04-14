@@ -12,9 +12,10 @@ import java.util.List;
  * @param <V> Class for values in the table.
  */
 public class MyMap <K, V> {
-	private static final int INITIAL_SIZE = 4;
-	
-	/** The table is package-protected so that the unit test can examine it. */
+    V value;
+    private static final int INITIAL_SIZE = 4;
+
+    /** The table is package-protected so that the unit test can examine it. */
 	List<MyEntry<K, V>> [] buckets;
 	
 	/** Number of unique entries (e.g. keys) in the table */
@@ -44,10 +45,38 @@ public class MyMap <K, V> {
 	 * @param value
 	 */
 	public void put(K key, V value) {
-		expandIfNecessary();
-		
-		// TODO: Store the key.
-	}
+        if (value == null) {
+            throw new NullPointerException();
+        }
+
+
+        expandIfNecessary();
+
+
+        //make sure the key is not already in there
+        boolean put = true;
+        int hash = key.hashCode();
+        int index = hash % buckets.length;
+        List<MyEntry<K, V>> bucket = buckets[index];
+        for (int i = 0; i < bucket.size(); i++) {
+            if ((bucket.get(i).getKey().equals(key))) {
+                bucket.get(i).setValue(value);
+                put = false;
+            }
+        }
+        //adding new entry
+        while (put) {
+            MyEntry<K, V> e = new MyEntry<>(key, value);
+            bucket = buckets[index];
+            bucket.add(bucket.size(), e);
+            bucket.get(bucket.size() - 1).setValue(value);
+            numEntries += 1;
+            put = false;
+        }
+
+
+        // TODO: Store the key.
+    }
 	
 	/**
 	 * Returns the value associated with the specified key, or null if it
@@ -58,17 +87,57 @@ public class MyMap <K, V> {
 	 */
 	public V get(K key) {
 		// TODO: retrieve the key.
-		return null;
-	}
-	
-	/**
-	 * Expands the table to double the size, if necessary.
-	 */
+
+        int hash = key.hashCode();
+        int index = hash % buckets.length;
+        List<MyEntry<K, V>> bucket = buckets[index];
+        for (int i = 0; i < bucket.size(); i++) {
+            if ((bucket.get(i).getKey().equals(key))) {
+                value = bucket.get(i).getValue();
+                break;
+            } else {
+                value = null;
+            }
+        }
+
+        return value;
+    }
+
+    /**
+     * Expands the table to double the size, if necessary.
+     */
 	private void expandIfNecessary() {
 		// TODO: expand if necessary
-	}
-	
-	/**
+        if (size() > buckets.length * loadFactor) {
+            List<MyEntry<K, V>>[] newBuckets;
+            newBuckets = newArrayOfEntries(buckets.length * 2);
+            for (int x = 0; x < buckets.length; x++) {
+                for (int y = 0; y < buckets[x].size(); y++) {
+                    K key = buckets[x].get(y).getKey();
+                    V value = buckets[x].get(y).getValue();
+                    MyEntry<K, V> e = new MyEntry<>(key, value);
+                    int hash = key.hashCode();
+                    int index = hash % newBuckets.length;
+                    List<MyEntry<K, V>> newBucket = newBuckets[index];
+                    boolean togo = true;
+                    for (int i = 0; 0 < newBucket.size(); i++) {
+                        if (newBucket.get(i).getKey().equals(key)) {
+                            newBucket.get(i).setValue(value);
+                            togo = false;
+                        }
+                    }
+                    while (togo) {
+                        newBucket.add(newBucket.size(), e);
+                        togo = false;
+                    }
+                }
+            }
+            buckets = newBuckets;
+        }
+
+    }
+
+    /**
 	 * Returns an array of the specified size, each
 	 * containing an empty linked list that can be
 	 * filled with MyEntry objects.
